@@ -50,6 +50,16 @@ class Bot:
         print((str(datetime.datetime.now()) + ' title : ' + submission.title))
         print((str(datetime.datetime.now()) + ' url : ' + submission.url))
 
+    def has_keyword(self, subreddit, submission):
+        for attribute, value in self.keywords[subreddit]:
+            attribute_value = getattr(submission, str(attribute.keys)).lower()
+            for keyword in value:
+                try:  # with exclude
+                    return any(keyword in attribute_value) \
+                           and not any(keyword in attribute_value for keyword in self.keywords[subreddit[attribute]])
+                except:  # without exclude
+                    return any(keyword in attribute_value)
+
     def process(self, connection):
         r = connection
         e = EmailHandler()
@@ -67,12 +77,7 @@ class Bot:
                 break
 
             for submission in submissions:
-                title = submission.title.lower()
-                try:  # with exclude
-                    has_keyword = not any(string in title for string in self.exclude[subreddit_str]) \
-                                  and any(string in title for string in self.keywords[subreddit_str])
-                except:  # without exclude
-                    has_keyword = any(string in title for string in self.keywords[subreddit_str])
+                has_keyword = self.has_keyword(subreddit=subreddit_str, submission=submission)
 
                 if submission.id not in self.emailed and has_keyword:
                     self.log_match(subreddit=subreddit_str, submission=submission)
