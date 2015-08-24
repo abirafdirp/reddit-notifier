@@ -7,12 +7,15 @@ Installation
 -------------
 
 Clone the repo::
+
    git clone https://github.com/abirafdirp/reddit-notifier
 
 Install the requirements::
+
    pip install -r requirements.txt
 
 Run it::
+
    python run.py
 
 
