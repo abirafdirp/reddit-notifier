@@ -26,9 +26,10 @@ def run():
         return
 
     while True:
-        # because the statements that may raised connection error exception is
-        # too spread out in this block. This also used for catching bad settings
-        # configuration
+
+        # try is put here because the statements that may raised connection error
+        # exception is too spread out in this block. This also used for catching
+        # bad settings configuration
         try:
             r = praw.Reddit(user_agent=settings.USER_AGENT)
             print(str(datetime.datetime.now()) + ' Starting bot')
@@ -69,6 +70,7 @@ def run():
 
                         emailhandler.add_result([submission.title + '<br>' + submission.url + '<br><br>'])
                         emailed.append(submission.id)
+
                 time.sleep(5)  # sleep between each subreddits
 
             if not emailhandler.content:
