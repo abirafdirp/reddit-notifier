@@ -1,6 +1,6 @@
 USER_AGENT = "Simple reddit notifier 0.1 by /u/deusimpervius"
-KEYWORDS = {'gamedeals': ['free', 'giveaway', 'dark souls'], 'starcitizen': ['image']}
-EXCLUDE = {['drm']}
+KEYWORDS = {'gamedeals': ['free', 'giveaway'], 'starcitizen': ['image']}
+EXCLUDE = {'gamedeals': ['drm']}
 SUBREDDITS = ['gamedeals', 'starcitizen']
 SLEEP = 5
 

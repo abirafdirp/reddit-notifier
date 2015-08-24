@@ -8,8 +8,14 @@ from emailhandler import EmailHandler
 
 
 def run():
-    checked = []
+    emailed = [] # list consisting of submission that already emailed\
+    subreddits = settings.SUBREDDITS
     keywords = settings.KEYWORDS
+    for subreddit in subreddits:
+        if str(subreddit) not in keywords:
+            print "KEYWORDS error, either you haven't set it up or there is no keyword for some of the subreddits"
+            return
+
     exclude = settings.EXCLUDE
     keywords_index = 0
 
@@ -19,15 +25,20 @@ def run():
         print str(datetime.datetime.now()) + ' starting bot'
         emailhandler = EmailHandler()
 
-        for subreddit in settings.SUBREDDITS:
+        for subreddit in subreddits:
+            subreddit_txt = subreddit
             subreddit = r.get_subreddit(subreddit)
             add_subreddit_header = True # add heading for every match found in each subreddit
 
             for submission in subreddit.get_hot(limit=50):
                 title = submission.title.lower()
-                has_keyword = not any(string in title for string in exclude[keywords_index]) and any(string in title for string in keywords[keywords_index])
+                try:  # with exclude
+                    has_keyword = not any(string in title for string in exclude[subreddit_txt]) \
+                                  and any(string in title for string in keywords[subreddit_txt])
+                except: # without exclude
+                    has_keyword = any(string in title for string in keywords[subreddit_txt])
 
-                if submission.id not in checked and has_keyword:
+                if submission.id not in emailed and has_keyword:
                     print str(datetime.datetime.now()) \
                           + " Match found in " + str(subreddit) \
                           + " subreddit, adding result to mail "
@@ -35,17 +46,19 @@ def run():
                     print(str(datetime.datetime.now()) + ' url : ' + submission.url)
 
                     if add_subreddit_header:
-                        emailhandler.add_result(['<br><h3>Match found in ' + str(subreddit) \
-                                                 + ' subreddit with keywords ' + str(keywords[keywords_index]) + '</h3><br>' \
-                                                 + ' exclude ' + str(exclude[keywords_index])])
+                        try:
+                            emailhandler.add_result(['<br><h3>Match found in ' + subreddit_txt \
+                                                 + ' subreddit with keywords ' + str(keywords[subreddit_txt]) \
+                                                 + ' exclude ' + str(exclude[subreddit_txt]) \
+                                                 + '</h3><br>'])
+                        except:
+                            emailhandler.add_result(['<br><h3>Match found in ' + subreddit_txt \
+                                                 + ' subreddit with keywords ' + str(keywords[subreddit_txt]) + '</h3><br>'])
                         add_subreddit_header = False
 
                     emailhandler.add_result([submission.title + '<br>' + submission.url + '<br><br>'])
-                    checked.append(submission.id)
+                    emailed.append(submission.id)
             time.sleep(5)  # sleep between each subreddits
-            keywords_index += 1
-
-        keywords_index = 0
 
         if not emailhandler.content:
             print str(datetime.datetime.now()) \
