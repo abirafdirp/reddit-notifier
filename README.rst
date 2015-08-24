@@ -22,7 +22,7 @@ Run it::
 Configuration
 -------------
 
-Below are the configurations that you need specified in the settings.py
+Below are the configurations that you need to specified in the settings.py
 
 ======================================= ================================================ ============================================== 
 SETTINGS                                 Explanation                                      Example                           
@@ -36,6 +36,8 @@ SENDER_EMAIL                            a valid gmail account name with @gmail.c
 RECEPIENT_EMAIL                         a valid email address
 SUBJECT                                 email subject
 ======================================= ================================================ ============================================== 
+
+Exclude is sometimes useful e.g. a free game notifier script that has free in its keywords will catch "DRM free" submission, so you include the DRM in the exclude dictionary. 
 
 TODO
 -------------
