@@ -51,9 +51,9 @@ class Bot:
         print((str(datetime.datetime.now()) + ' url : ' + submission.url))
 
     def has_keyword(self, subreddit, submission):
-        for attribute, value in self.keywords[subreddit]:
+        for query in self.keywords[subreddit]:
             attribute_value = getattr(submission, str(attribute.keys)).lower()
-            for keyword in value:
+            for keyword in query:
                 try:  # with exclude
                     return any(keyword in attribute_value) \
                            and not any(keyword in attribute_value for keyword in self.keywords[subreddit[attribute]])
