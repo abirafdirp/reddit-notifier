@@ -31,7 +31,7 @@ USER_AGENT                              https://github.com/reddit/reddit/wiki/AP
 SUBREDDITS                              list of subreddits                                SUBREDDITS = ['gamedeals', 'pcmasterrace']                                     
 KEYWORDS                                dictionary of keywords with its subreddit value                               KEYWORDS = {'gamedeals': ['free', 'giveaway'], 'pcmasterrace': ['free', 'giveaway']}                                       
 EXCLUDE                                 (OPTIONAL)                                        EXCLUDE = {'gamedeals': ['drm']}   
-SLEEP                                   delay between runs in seconds                SLEEP = 18000 
+SLEEP                                   delay between runs in seconds                     SLEEP = 18000 
 SENDER_EMAIL                            a valid gmail account name with @gmail.com
 RECEPIENT_EMAIL                         a valid email address
 SUBJECT                                 email subject
