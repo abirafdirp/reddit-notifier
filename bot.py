@@ -22,38 +22,42 @@ class Bot:
 
     @staticmethod
     def validate():
-        if not bool(re.search('@gmail.com', settings.SENDER_EMAIL)):
-            raise error.BotInvalidSenderEmail
+        try:
+            if not bool(re.search('@gmail.com', settings.SENDER_EMAIL)):
+                raise error.BotInvalidSenderEmail
 
-        if not bool(re.search('@', settings.RECEPIENT_EMAIL)):
-            raise error.BotInvalidRecepientEmail
+            if not bool(re.search('@', settings.RECEPIENT_EMAIL)):
+                raise error.BotInvalidRecepientEmail
 
-        for subreddit in settings.SUBREDDITS:
-            if str(subreddit) not in settings.KEYWORDS:
-                raise error.BotInvalidKeywords('Missing subreddit in keywords')
+            for subreddit in settings.SUBREDDITS:
+                if str(subreddit) not in settings.KEYWORDS:
+                    raise error.BotInvalidKeywords('Missing subreddit in keywords')
 
-        if type(settings.SLEEP) != int:
-            raise error.BotInvalidSleep
+            if type(settings.SLEEP) != int:
+                raise error.BotInvalidSleep
 
-        if type(settings.KEYWORDS) != dict:
-            raise error.BotInvalidKeywords('Invalid keywords data structure')
-
-        if type(settings.EXCLUDE) != dict:
-            raise error.BotInvalidExclude
-
-        for subreddit, keywords_dict in settings.KEYWORDS.items():
-            if type(subreddit) != str or type(keywords_dict) != dict:
+            if type(settings.KEYWORDS) != dict:
                 raise error.BotInvalidKeywords('Invalid keywords data structure')
-            for attribute, keyword in keywords_dict.items():
-                if type(attribute) != str or type(keyword) != list:
-                    raise error.BotInvalidKeywords('Invalid keywords data structure')
 
-        for subreddit, keywords_dict in settings.EXCLUDE.items():
-            if type(subreddit) != str or type(keywords_dict) != dict:
-                raise error.BotInvalidExclude('Invalid exclude data structure')
-            for attribute, keyword in keywords_dict.items():
-                if type(attribute) != str or type(keyword) != list:
+            if type(settings.EXCLUDE) != dict:
+                raise error.BotInvalidExclude
+
+            for subreddit, keywords_dict in settings.KEYWORDS.items():
+                if type(subreddit) != str or type(keywords_dict) != dict:
+                    raise error.BotInvalidKeywords('Invalid keywords data structure')
+                for attribute, keyword in keywords_dict.items():
+                    if type(attribute) != str or type(keyword) != list:
+                        raise error.BotInvalidKeywords('Invalid keywords data structure')
+
+            for subreddit, keywords_dict in settings.EXCLUDE.items():
+                if type(subreddit) != str or type(keywords_dict) != dict:
                     raise error.BotInvalidExclude('Invalid exclude data structure')
+                for attribute, keyword in keywords_dict.items():
+                    if type(attribute) != str or type(keyword) != list:
+                        raise error.BotInvalidExclude('Invalid exclude data structure')
+        except AttributeError:
+            print('Missing configuration, please check your settings')
+            sys.exit()
 
     def log_match(self, subreddit, submission):
         print(str(datetime.datetime.now())
@@ -64,15 +68,14 @@ class Bot:
 
     def has_keyword(self, subreddit, submission):
 
-        # get a list of dict of attributes and its keywords for current subreddit
+        # get a dict of attributes and its keywords for current subreddit
         dict_of_keywords = self.keywords[subreddit]
 
-        # iterate over each dict of attributes and its keywords
         for attribute, keywords in dict_of_keywords.items():
             submission_attribute_value = getattr(submission, attribute).lower()
-            # because the keywords are inside a list, so we need to get the
-            # value of them via its key
+
             for keyword in keywords:
+
                 # each of submission attribute will be caselowered
                 if keyword in submission_attribute_value \
                         and not self.has_exclude(subreddit, submission) == True \
