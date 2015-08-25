@@ -23,15 +23,40 @@ class EmailHandler:
             sys.exit()
         keyring.set_password('yagmail', settings.SENDER_EMAIL, password)
 
-    def add_result(self, result):
-        self.content += result
+    def add_header(self, keywords, subreddit, exclude=''):
+        if exclude != '':
+            self.content += ['<br><h3>Match found in ' + subreddit \
+                         + ' subreddit with keywords ' + keywords \
+                         + ' exclude ' \
+                         + exclude \
+                         + '</h3><br>']
+        else:
+            self.content += ['<br><h3>Match found in ' + subreddit \
+                         + ' subreddit with keywords ' \
+                         + keywords + '</h3><br>']
+
+    def add_header_keywords(self, keywords):
+        pass
+
+    def add_header_exclude(self, exclude):
+        pass
+
+    def add_result(self, submission):
+        self.content += [submission.title + '<br>' + submission.url + '<br><br>']
 
     def send(self):
         try:
             yagmail.SMTP(settings.SENDER_EMAIL).send(settings.RECEPIENT_EMAIL, settings.SUBJECT, self.content)
             print(str(datetime.datetime.now()) + ' Email sent')
-        except:
-            print('Error occured, email not sent, error message ' + str(sys.exc_info()[0]))
+            self.content = []
+        except not KeyboardInterrupt:
+            print(str(datetime.datetime.now()) +
+                  'Error occured, email not sent, error message ' +
+                  str(sys.exc_info()[0]))
+            print(str(datetime.datetime.now()) +
+                  'Results will be emailed at next run')
+
+
 
 
 

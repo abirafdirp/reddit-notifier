@@ -11,12 +11,13 @@ from emailhandler import EmailHandler
 
 class Bot:
     def __init__(self):
-        # list consisting of submissions that already emailed
-        self.emailed = []
+        # list consisting of submissions that already proccessed but not emailed
+        self.processed = []
 
         self.subreddits = settings.SUBREDDITS
         self.keywords = settings.KEYWORDS
         self.exclude = settings.EXCLUDE
+        self.e = EmailHandler()
 
     @staticmethod
     def validate():
@@ -61,24 +62,6 @@ class Bot:
                         if type(keyword) != str:
                             raise error.BotInvalidExclude('Invalid exclude data structure')
 
-    def add_header(self, render, attribute, emailhandler, subreddit):
-        e = emailhandler
-        if render:
-            try:
-                e.add_result(['<br><h3>Match found in ' + subreddit \
-                             + ' subreddit with keywords ' + str(self.keywords[subreddit]) \
-                             + ' exclude ' \
-                             + str(self.exclude[subreddit]) \
-                             + '</h3><br>'])
-            except:
-                e.add_result(['<br><h3>Match found in ' + subreddit \
-                             + ' subreddit with keywords ' \
-                             + str(self.keywords[subreddit]) + '</h3><br>'])
-
-    def add_result(self, emailhandler, submission):
-        e = emailhandler
-        e.add_result([submission.title + '<br>' + submission.url + '<br><br>'])
-
     def log_match(self, subreddit, submission):
         print(str(datetime.datetime.now())
               + " Match found in " + subreddit
@@ -89,20 +72,33 @@ class Bot:
     def has_keyword(self, subreddit, submission):
 
         # get a list of dict of attributes and its keywords for current subreddit
-        attributes = self.keywords[subreddit]
+        list_of_keywords = self.keywords[subreddit]
 
         # iterate over each dict of attributes and its keywords
-        for attribute in attributes:
+        for keywords in list_of_keywords:
 
             # because the keywords are inside a list, so we need to get the
             # value of them via its key
-            for key in attribute:
+            for attribute in keywords:
 
                 # each of submission attribute will be caselowered
-                sub_attribute = getattr(submission, key).lower()
+                sub_attribute = getattr(submission, attribute).lower()
 
-                return any(value in sub_attribute for value in attribute[key]) \
-                       and not self.has_exclude(subreddit=subreddit, submission=submission)
+                for keyword in keywords[attribute]:
+                    if keyword in sub_attribute \
+                            and not self.has_exclude(subreddit, submission) == True \
+                            and submission.id not in self.processed:
+                        try:
+                            keywords = "{'" + attribute + "': ['" + keyword + "']}"
+                            self.e.add_header(keywords=keywords,
+                                              subreddit=subreddit,
+                                              exclude=str(self.exclude[subreddit]))
+                        except KeyError:
+                            keywords = "{'" + attribute + "': ['" + keyword + "']}"
+                            self.e.add_header(keywords=keywords,
+                                              subreddit=subreddit)
+                        return True
+                return False
 
     def has_exclude(self, subreddit, submission):
 
@@ -118,13 +114,9 @@ class Bot:
 
     def process(self, connection):
         r = connection
-        e = EmailHandler()
         for subreddit in self.subreddits:
             subreddit_str = subreddit  # the subreddit string
             subreddit = r.get_subreddit(subreddit)  # this is an object
-
-            # add heading for each subreddit
-            add_subreddit_header = True
 
             try:  # connection error
                 submissions = subreddit.get_hot(limit=50)
@@ -135,26 +127,21 @@ class Bot:
             for submission in submissions:
                 has_keyword = self.has_keyword(subreddit=subreddit_str, submission=submission)
 
-                if submission.id not in self.emailed and has_keyword:
+                if submission.id not in self.processed and has_keyword:
                     self.log_match(subreddit=subreddit_str, submission=submission)
-
-                    self.add_header(add_subreddit_header, emailhandler=e,
-                                    subreddit=subreddit_str)
-                    add_subreddit_header = False
-
-                    self.add_result(emailhandler=e, submission=submission)
-                    self.emailed.append(submission.id)
+                    self.e.add_result(submission=submission)
+                    self.processed.append(submission.id)
 
             time.sleep(2)  # sleep between each subreddits
 
-        if not e.content:
+        if not self.e.content:
             print(str(datetime.datetime.now())
                   + " No match found, waiting for next run at "
                   + str(datetime.datetime.now()
                   + datetime.timedelta(seconds=settings.SLEEP)))
         else:
             print(str(datetime.datetime.now()) + ' Sending results to ' + settings.RECEPIENT_EMAIL)
-            e.send()
+            self.e.send()
             print(str(datetime.datetime.now())
                   +' Waiting for next run at ' + str(datetime.datetime.now()
                   + datetime.timedelta(seconds=settings.SLEEP)))
