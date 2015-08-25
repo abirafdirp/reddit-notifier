@@ -2,11 +2,13 @@
 USER_AGENT = "Simple reddit notifier 0.1 by /u/deusimpervius"
 
 SUBREDDITS = ['gamedeals', 'starcitizen']
-KEYWORDS = {'gamedeals': [{'title': ['free', 'giveaway'],
-                         'selftext': ['giveaway']}],
-            'starcitizen': [{'title': ['image']}]
+KEYWORDS = {'gamedeals': [{'title': ['free', 'giveaway']},
+                          {'selftext': ['giveaway']}],
+            'starcitizen': [{'title': ['chairman']}]
             }
-EXCLUDE = {'gamedeals': ['drm']}
+EXCLUDE = {'gamedeals': [{'title': ['drm']}],
+           'starcitizen': [{'url': ['imperialnews']}]
+           }
 
 SLEEP = 5
 

@@ -1,7 +1,6 @@
 import sys
 import datetime
 import getpass
-import re
 
 import keyring
 import yagmail
@@ -16,11 +15,12 @@ class EmailHandler:
 
     @staticmethod
     def register():
-        if not bool(re.search('@gmail.com', settings.SENDER_EMAIL)):
-            print('Invalid sender email address, please refer to docs')
-            sys.exit()
-        print("Provide your email password information below, password is stored in the system keyring (safe)")
+        print("Provide your email password below. Password is stored in the system keyring (safe)")
         password = getpass.getpass('password : ')
+        password2 = getpass.getpass('confirm password : ')
+        if password != password2:
+            print('Password does not match')
+            sys.exit()
         keyring.set_password('yagmail', settings.SENDER_EMAIL, password)
 
     def add_result(self, result):
