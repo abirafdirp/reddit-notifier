@@ -11,6 +11,7 @@ from emailhandler import EmailHandler
 
 class Bot:
     def __init__(self):
+
         # list consisting of submissions that already proccessed but not emailed
         self.processed = []
 
@@ -40,27 +41,19 @@ class Bot:
         if type(settings.EXCLUDE) != dict:
             raise error.BotInvalidExclude
 
-        for subreddit, attributes_list in settings.KEYWORDS.items():
-            if type(subreddit) != str or type(attributes_list) != list:
+        for subreddit, keywords_dict in settings.KEYWORDS.items():
+            if type(subreddit) != str or type(keywords_dict) != dict:
                 raise error.BotInvalidKeywords('Invalid keywords data structure')
-            for attribute in attributes_list:
-                for attribute_name, keywords in attribute.items():
-                    if type(attribute_name) != str or type(keywords) != list:
-                        raise error.BotInvalidKeywords('Invalid keywords data structure')
-                    for keyword in keywords:
-                        if type(keyword) != str:
-                            raise error.BotInvalidKeywords('Invalid keywords data structure')
+            for attribute, keyword in keywords_dict.items():
+                if type(attribute) != str or type(keyword) != list:
+                    raise error.BotInvalidKeywords('Invalid keywords data structure')
 
-        for subreddit, attributes_list in settings.EXCLUDE.items():
-            if type(subreddit) != str or type(attributes_list) != list:
+        for subreddit, keywords_dict in settings.EXCLUDE.items():
+            if type(subreddit) != str or type(keywords_dict) != dict:
                 raise error.BotInvalidExclude('Invalid exclude data structure')
-            for attribute in attributes_list:
-                for attribute_name, keywords in attribute.items():
-                    if type(attribute_name) != str or type(keywords) != list:
-                        raise error.BotInvalidExclude('Invalid exclude data structure')
-                    for keyword in keywords:
-                        if type(keyword) != str:
-                            raise error.BotInvalidExclude('Invalid exclude data structure')
+            for attribute, keyword in keywords_dict.items():
+                if type(attribute) != str or type(keyword) != list:
+                    raise error.BotInvalidExclude('Invalid exclude data structure')
 
     def log_match(self, subreddit, submission):
         print(str(datetime.datetime.now())
@@ -72,45 +65,42 @@ class Bot:
     def has_keyword(self, subreddit, submission):
 
         # get a list of dict of attributes and its keywords for current subreddit
-        list_of_keywords = self.keywords[subreddit]
+        dict_of_keywords = self.keywords[subreddit]
 
         # iterate over each dict of attributes and its keywords
-        for keywords in list_of_keywords:
-
+        for attribute, keywords in dict_of_keywords.items():
+            submission_attribute_value = getattr(submission, attribute).lower()
             # because the keywords are inside a list, so we need to get the
             # value of them via its key
-            for attribute in keywords:
-
+            for keyword in keywords:
                 # each of submission attribute will be caselowered
-                sub_attribute = getattr(submission, attribute).lower()
-
-                for keyword in keywords[attribute]:
-                    if keyword in sub_attribute \
-                            and not self.has_exclude(subreddit, submission) == True \
-                            and submission.id not in self.processed:
-                        try:
-                            keywords = "{'" + attribute + "': ['" + keyword + "']}"
-                            self.e.add_header(keywords=keywords,
-                                              subreddit=subreddit,
-                                              exclude=str(self.exclude[subreddit]))
-                        except KeyError:
-                            keywords = "{'" + attribute + "': ['" + keyword + "']}"
-                            self.e.add_header(keywords=keywords,
-                                              subreddit=subreddit)
-                        return True
-                return False
+                if keyword in submission_attribute_value \
+                        and not self.has_exclude(subreddit, submission) == True \
+                        and submission.id not in self.processed:
+                    try:
+                        keywords = "{'" + attribute + "': ['" + keyword + "']}"
+                        self.e.add_header(keywords=keywords,
+                                          subreddit=subreddit,
+                                          exclude=str(self.exclude[subreddit]))
+                    except KeyError:
+                        keywords = "{'" + attribute + "': ['" + keyword + "']}"
+                        self.e.add_header(keywords=keywords,
+                                          subreddit=subreddit)
+                    return True
+            return False
 
     def has_exclude(self, subreddit, submission):
 
         try:
-            attributes = self.exclude[subreddit]
+            dict_of_keywords = self.exclude[subreddit]
         except KeyError:
             return False
 
-        for attribute in attributes:
-            for key in attribute:
-                sub_attribute = getattr(submission, key).lower()
-                return any(keyword in sub_attribute for keyword in attribute[key])
+        for attribute, keywords in dict_of_keywords.items():
+            submission_attribute_value = getattr(submission, attribute).lower()
+            if any(keyword in submission_attribute_value for keyword in keywords) == True:
+                return True
+        return False
 
     def process(self, connection):
         r = connection
